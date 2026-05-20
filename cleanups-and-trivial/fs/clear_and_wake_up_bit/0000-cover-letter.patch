@@ -1,0 +1,41 @@
+From 216611df912192b1db226988e6ec35fdf390f382 Mon Sep 17 00:00:00 2001
+From: Agatha Isabelle Moreira <code@agatha.dev>
+Date: Wed, 20 May 2026 02:53:44 -0300
+Subject: [PATCH 0/2] fs: refactor code to use clear_and_wake_up_bit()
+
+Refactor code to use `clear_and_wake_up_bit()` instead of manual calls
+to:
+       	clear_bit_unlock();
+	smp_mb__after_atomic();
+	wake_up_bit();
+
+The helper function `clear_and_wake_up_bit()` was introduced in
+'commit 8236b0ae31c83 ("bdi: wake up concurrent wb_shutdown()
+callers.")' as a generic way of doing the same sequence of operations,
+but several pieces of code still remain.
+
+Replace manual calls to the operations by a single call to
+`clear_and_wake_up_bit()` to deduplicate code and standardize pathways.
+
+TESTING
+-------
+Boot-tested on an x86_64 QEMU virtual machine. Basic filesystem
+operations (create, delete, sync) were performed on an ext4 filesystem
+with `data=journal` modes. No issues were observed.
+
+Suggested-by: shuo chen <1289151713@qq.com>
+Link: https://lore.kernel.org/kernelnewbies/agzoqV835-co4kAN@guidai/T/#t
+Signed-off-by: Agatha Isabelle Moreira <code@agatha.dev>
+---
+
+Agatha Isabelle Moreira (2):
+  fs: buffer: use clear_and_wake_up_bit() in unlock_buffer()
+  fs: jbd2: use clear_and_wake_up_bit() in journal_end_buffer_io_sync()
+
+ fs/buffer.c      | 4 +---
+ fs/jbd2/commit.c | 4 +---
+ 2 files changed, 2 insertions(+), 6 deletions(-)
+
+-- 
+2.53.0
+
